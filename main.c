@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 void intro() {
     printf("Welcome to \n");
@@ -9,7 +10,7 @@ void intro() {
     printf(" / _| | || | | '_| | '_| / -_) | ' \\  / _| | || |   / _| / _ \\ | ' \\  \\ V / / -_) | '_| |  _| / -_) | '_| \n");
     printf(" \\__|  \\_,_| |_|   |_|   \\___| |_||_| \\__|  \\_, |   \\__| \\___/ |_||_|  \\_/  \\___| |_|    \\__| \\___| |_|   \n");
     printf("                                            |__/\n\n");
-    printf("* All conversion rates are accurate as of Feb 2022.\n");
+    printf("* All conversion rates are accurate as of Feb 2022.\n\n");
 }
 
 void get_input(char *input) {
@@ -66,6 +67,33 @@ double convert_usd(char **from, double amt) {
     else if (strcmp(*from, "CAD") == 0) {
         return amt * 0.78837;
     }
+    else if (strcmp(*from, "Castar") == 0) {
+        return amt * 1.332;
+    }
+    else if (strcmp(*from, "Imperial Credit") == 0) {
+        return amt * 0.714;
+    }
+    else if (strcmp(*from, "Gold") == 0) {
+        return amt * 3.333;
+    }
+    else if (strcmp(*from, "Rupee") == 0) {
+        return amt * 0.833;
+    }
+    else if (strcmp(*from, "Latinum") == 0) {
+        return amt * 0.01;
+    }
+    else if (strcmp(*from, "Gil") == 0) {
+        return amt * 0.097;
+    }
+    else if (strcmp(*from, "Coin") == 0) {
+        return amt * 0.357;
+    }
+    else if (strcmp(*from, "Ring") == 0) {
+        return amt * 0.1923;
+    }
+    else if (strcmp(*from, "Solari") == 0) {
+        return amt * 0.002;
+    }
     else return 0;
 }
 
@@ -91,11 +119,38 @@ double convert_curr(char **to, double amt) {
     else if (strcmp(*to, "CAD") == 0) {
         return amt / 0.78837;
     }
+    else if (strcmp(*to, "Castar") == 0) {
+        return amt / 0.75;
+    }
+    else if (strcmp(*to, "Imperial Credit") == 0) {
+        return amt / 1.4;
+    }
+    else if (strcmp(*to, "Gold") == 0) {
+        return amt / 0.3;
+    }
+    else if (strcmp(*to, "Rupee") == 0) {
+        return amt / 1.2;
+    }
+    else if (strcmp(*to, "Latinum") == 0) {
+        return amt / 100;
+    }
+    else if (strcmp(*to, "Gil") == 0) {
+        return amt / 10.3;
+    }
+    else if (strcmp(*to, "Coin") == 0) {
+        return amt / 2.8;
+    }
+    else if (strcmp(*to, "Ring") == 0) {
+        return amt / 5.2;
+    }
+    else if (strcmp(*to, "Solari") == 0) {
+        return amt / 500;
+    }
     else return 0;
 }
 
 void print_result(char **from, char **to, double amt1, double amt2) {
-    printf("%.2f %s = %.2f %s\n", amt1, *from, amt2, *to);
+    printf("%.2f %s = %.2f %s\n\n", amt1, *from, amt2, *to);
 }
 
 void convert_file() {
@@ -108,50 +163,109 @@ void convert_file() {
     char *from = (char*)malloc(5*sizeof(char));
     char *to = (char*)malloc(5*sizeof(char));
 
-    do {
         fscanf(data, "%s %s %lf", from, to, &amt1);
         amt2 = convert_curr(&to,convert_usd(&from,amt1));
         fprintf(converted_data, "%.2f %s = %.2f %s\n", amt1, from, amt2, to);
-    } while (fgetc(data) != EOF);
+    
     fclose(data);
     fclose(converted_data);
     free(from);
     free(to);
 }
 
+void request() {
+    FILE * rng;
+    int num;
+    rng = fopen("ui.txt", "w");
+    fputs("get", rng);
+    fclose(rng);
+}
+
+void randomnum() {
+    FILE * rng;
+    double num = 0.0;
+    int val = 0;
+    rng = fopen("ui.txt", "r");
+    fscanf(rng, "%lf", &num);
+
+    val = (int)num;
+    switch (val%6) {
+        case 0:
+            printf("1 USD = 1.38 AUD\n");
+            break;
+        case 1:
+            printf("1 USD = 0.75 GBP\n");
+            break;
+        case 2:
+            printf("1 USD = 0.89 EUR\n");
+            break;
+        case 3:
+            printf("1 USD = 114.91 JPY\n");
+            break;
+        case 4:
+            printf("1 USD = 0.92 CHF\n");
+            break;
+        case 5:
+            printf("1 USD = 1.27 CAD\n");
+            break;
+        default:
+            printf("error\n");
+            break;
+    }
+    fclose(rng);
+    //printf("num = %lf, val = %d\n", num, val);
+}
+
 int main(int argc, char const *argv[]) {
     char *from, *to;
     double amt1, amt2;
-    int input;
+    int input = 0;
+    int x = atoi(argv[1]);
 
-    printf("Please choose a mode:\n[0] Normal conversion mode\n[1] File conversion mode\n[2] Show me a random conversion rate \n[3] Quit\n");
-    scanf("%d", &input);
+    if (x == 0) {
+        while (input != 3) {
+            printf("Please choose a mode:\n[0] Program description and documentation\n[1] Normal conversion mode\n[2] Show me a random conversion rate \n[3] Quit\n");
+            scanf("%d", &input);
 
-    // 0 = normal conversion mode
-    if (input == 0) {
-        intro();
-        while(1) {
-            get_all(&from, &to, &amt1);
-            amt2 = convert_curr(&to, convert_usd(&from, amt1));
-            
-            print_result(&from, &to, amt1, amt2);
-            free(from);
-            free(to);
+            if (input == 0) {
+                printf("This program converts amounts of currency.\n");
+                printf("[1] Normal conversion mode: This mode lets you enter in the currencies to convert between and the amount of currency to be converted.\n");
+                printf("[2] Random conversion rate: This mode simply shows you a conversion rate between two random currencies.\n");
+                printf("[3] Quit the program.\n");
+                printf("\nAny questions? Please email maomal@oregonstate.edu.\n\n");
+            }
+
+            // 1 = normal conversion mode
+            if (input == 1) {
+                intro();
+                get_all(&from, &to, &amt1);
+                amt2 = convert_curr(&to, convert_usd(&from, amt1));
+                
+                print_result(&from, &to, amt1, amt2);
+                free(from);
+                free(to);
+            }
+
+            // 2 = random rate
+            else if (input == 2) {
+                //printf("Requesting a number from the random number generator...\n");
+                request();
+                sleep(2);
+                printf("Random conversion rate: ");
+                randomnum();
+            }
+
+            else if (input == 3) {
+                // quit
+            }
         }
     }
-    // 1 = file input mode
-    else if (input == 1) {
-        convert_file();
-        printf("Your file has been converted.\n");
+    else if (x == 1) {
+        //printf("'converted_data.txt' will now be overwritten.\n...\n");
+        while (1) {
+            sleep(1);
+            convert_file();
+        }
+        //printf("Your file has been converted.\n\n");
     }
-
-    else if (input == 2) {
-        printf("Requesting a number from the random number generator...\n");
-        printf("Random conversion rate: 1 CAD = 0.79 USD\n");
-    }
-
-    else {
-        printf("An error has occurred. Terminating program...\n");
-    }
-
 }
