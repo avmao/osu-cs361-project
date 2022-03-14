@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
+// Prints an introduction
 void intro() {
     printf("Welcome to \n");
     printf("                                                                                         _\n");       
@@ -13,6 +14,7 @@ void intro() {
     printf("* All conversion rates are accurate as of Feb 2022.\n\n");
 }
 
+// Gets the input from the user and stores it in the provided char pointer. If the user enters an invalid string, the function will ask for input again until it is valid
 void get_input(char *input) {
     scanf("%s", input);
     if (strcmp(input, "AUD") == 0) {}
@@ -29,6 +31,8 @@ void get_input(char *input) {
     return;
 }
 
+// Asks the user for both currencies they would like to convert between. Stores the input strings in from and to. 
+// Also asks the user for how much currency they want to convert, and stores that in amt.
 void get_all(char **from, char **to, double* amt) {
     char *input = (char*)malloc(16*sizeof(char));
     char *input2 = (char*)malloc(16*sizeof(char));
@@ -45,6 +49,7 @@ void get_all(char **from, char **to, double* amt) {
     scanf("%lf", amt);
 }
 
+// Converts the given amount to a USD amount, based on the input string.
 double convert_usd(char **from, double amt) {
     if (strcmp(*from, "AUD") == 0) {
         return amt * 0.71841;
@@ -97,6 +102,7 @@ double convert_usd(char **from, double amt) {
     else return 0;
 }
 
+// Converts the given amount from USD to a currency amount, based on the input string.
 double convert_curr(char **to, double amt) {
     if (strcmp(*to, "AUD") == 0) {
         return amt / 0.71841;
@@ -149,10 +155,15 @@ double convert_curr(char **to, double amt) {
     else return 0;
 }
 
+// Displays the end result to the user with the amount of currency they converted from and the amount that they converted to.
 void print_result(char **from, char **to, double amt1, double amt2) {
-    printf("%.2f %s = %.2f %s\n\n", amt1, *from, amt2, *to);
+    printf("_____________________________________________________________\n\n");
+    printf("%.2f %s = %.2f %s\n", amt1, *from, amt2, *to);
+    printf("_____________________________________________________________\n\n");
 }
 
+// Carries out the microservice functionality of the program that converts a file.
+// The files must be named "data.txt", and the output is written to a file called "converted_data.txt".
 void convert_file() {
     FILE * data;
     data = fopen("data.txt", "r");
@@ -163,9 +174,9 @@ void convert_file() {
     char *from = (char*)malloc(5*sizeof(char));
     char *to = (char*)malloc(5*sizeof(char));
 
-        fscanf(data, "%s %s %lf", from, to, &amt1);
-        amt2 = convert_curr(&to,convert_usd(&from,amt1));
-        fprintf(converted_data, "%.2f %s = %.2f %s\n", amt1, from, amt2, to);
+    fscanf(data, "%s %s %lf", from, to, &amt1); // Get the information from the file
+    amt2 = convert_curr(&to,convert_usd(&from,amt1));
+    fprintf(converted_data, "%.2f %s = %.2f %s\n", amt1, from, amt2, to); //Write it to the new file
     
     fclose(data);
     fclose(converted_data);
@@ -173,6 +184,7 @@ void convert_file() {
     free(to);
 }
 
+// Writes "get" to the pipeline, which then triggers teammate's RNG microservice to write a random number to the same file.
 void request() {
     FILE * rng;
     int num;
@@ -181,6 +193,7 @@ void request() {
     fclose(rng);
 }
 
+// Reads in a random number from ui.txt, and then selects a conversion rate to show the user based on the random number.
 void randomnum() {
     FILE * rng;
     double num = 0.0;
@@ -213,31 +226,33 @@ void randomnum() {
             break;
     }
     fclose(rng);
-    //printf("num = %lf, val = %d\n", num, val);
 }
 
 int main(int argc, char const *argv[]) {
+    intro();
     char *from, *to;
     double amt1, amt2;
     int input = 0;
-    int x = atoi(argv[1]);
+    int x = atoi(argv[1]); // Get the mode - 0 is normal operating mode, 1 is microservice mode that watches a file
 
     if (x == 0) {
         while (input != 3) {
             printf("Please choose a mode:\n[0] Program description and documentation\n[1] Normal conversion mode\n[2] Show me a random conversion rate \n[3] Quit\n");
             scanf("%d", &input);
 
+            // Optional information for users
             if (input == 0) {
+                printf("_____________________________________________________________\n\n");
                 printf("This program converts amounts of currency.\n");
-                printf("[1] Normal conversion mode: This mode lets you enter in the currencies to convert between and the amount of currency to be converted.\n");
+                printf("[1] Normal conversion mode: This mode lets you enter in the currencies to convert between \nand the amount of currency to be converted.\n");
                 printf("[2] Random conversion rate: This mode simply shows you a conversion rate between two random currencies.\n");
                 printf("[3] Quit the program.\n");
-                printf("\nAny questions? Please email maomal@oregonstate.edu.\n\n");
+                printf("\nAny questions? Please email maomal@oregonstate.edu.\n");
+                printf("_____________________________________________________________\n\n");
             }
 
             // 1 = normal conversion mode
             if (input == 1) {
-                intro();
                 get_all(&from, &to, &amt1);
                 amt2 = convert_curr(&to, convert_usd(&from, amt1));
                 
@@ -248,11 +263,12 @@ int main(int argc, char const *argv[]) {
 
             // 2 = random rate
             else if (input == 2) {
-                //printf("Requesting a number from the random number generator...\n");
                 request();
-                sleep(2);
+                sleep(1); // Delay allows RNG service to read the "get" and write back the random number
+                printf("_____________________________________________________________\n\n");
                 printf("Random conversion rate: ");
                 randomnum();
+                printf("_____________________________________________________________\n\n");
             }
 
             else if (input == 3) {
@@ -261,11 +277,9 @@ int main(int argc, char const *argv[]) {
         }
     }
     else if (x == 1) {
-        //printf("'converted_data.txt' will now be overwritten.\n...\n");
         while (1) {
-            sleep(1);
+            sleep(1); // Microservice version only runs once a second, checking the data.txt file
             convert_file();
         }
-        //printf("Your file has been converted.\n\n");
     }
 }
